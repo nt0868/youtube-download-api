@@ -1,18 +1,46 @@
 import os
-import os
 import tempfile
 import shutil
+import re
+import json
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from pytubefix import YouTube
+from pytubefix.exceptions import RegexMatchError
+from pytubefix.extract import get_yt_url
+from pytubefix.cipher import Cipher as CipherFix
 
-# Adicione esta linha:
-YouTube.use_progressive_token = True
+# --- Pytubefix Hotfix (Patch para a Cifra) ---
+# Este código é uma solução temporária para a detecção de bot.
+# Ele substitui a lógica interna do pytubefix para garantir que as URLs
+# dos vídeos sejam decifradas corretamente.
+
+def get_signature_from_url(url, js):
+    try:
+        if url.startswith("https://"):
+            return None
+        json_data = json.loads(js)
+        cipher = CipherFix(js=json.dumps(json_data))
+        url_without_sig = re.sub(r"&sig=[a-zA-Z0-9\-_.]*", "", url)
+        url_with_fixed_sig = cipher.get_signature(url_without_sig)
+        return url_with_fixed_sig
+    except (json.JSONDecodeError, RegexMatchError):
+        return None
+
+def apply_hotfix():
+    try:
+        YouTube.get_yt_url = get_yt_url
+        YouTube.get_signature = get_signature_from_url
+        print("Pytubefix hotfix aplicado com sucesso!")
+    except Exception as e:
+        print(f"Erro ao aplicar o hotfix do pytubefix: {e}")
+
+# Chame a função para aplicar o patch assim que o script iniciar
+apply_hotfix()
+# --- Fim do Hotfix ---
 
 app = Flask(__name__)
 CORS(app)  # libera para acessar desde o frontend (ajuste em produção)
-
-# O restante do seu código segue aqui...
 
 # --- Helpers ---
 def yt_from_url(url):
@@ -200,4 +228,3 @@ def download():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
-
