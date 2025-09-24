@@ -1,16 +1,18 @@
 import os
+import os
 import tempfile
 import shutil
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from pytubefix import YouTube
-from pytubefix import YouTube
-from pytubefix.exceptions import PytubeFixError
-YouTube.use_progressive_token = True
 
+# Adicione esta linha:
+YouTube.use_progressive_token = True
 
 app = Flask(__name__)
 CORS(app)  # libera para acessar desde o frontend (ajuste em produção)
+
+# O restante do seu código segue aqui...
 
 # --- Helpers ---
 def yt_from_url(url):
