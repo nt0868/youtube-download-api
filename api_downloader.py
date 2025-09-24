@@ -4,18 +4,26 @@ import shutil
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from pytubefix import YouTube
-
-# This line is no longer needed with the latest pytubefix,
-# as the library should handle these issues automatically.
-# YouTube.use_progressive_token = True
+from pytubefix.innertube import InnerTube
 
 app = Flask(__name__)
 CORS(app)
 
+# Configurar o InnerTube para evitar detecção de bot
+InnerTube.use_oauth = False
+InnerTube.use_progressive = True
+InnerTube.client = "ANDROID"  # ou "WEB" se necessário
+
 # --- Helpers ---
 def yt_from_url(url):
     try:
-        yt = YouTube(url)
+        # Configurar opções específicas para evitar detecção
+        yt = YouTube(
+            url,
+            use_oauth=False,
+            allow_oauth_cache=True,
+            use_progressive=True
+        )
         return yt
     except Exception as e:
         raise
@@ -150,6 +158,16 @@ def download():
             except Exception as e:
                 print(f"Erro ao remover pasta temporária {tmpdir}: {e}")
 
+    except Exception as e:
+        return jsonify({"error": "Erro durante download", "detail": str(e)}), 500
+
+# Rota de saúde para testar se o servidor está funcionando
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "message": "Servidor funcionando"})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
     except Exception as e:
         return jsonify({"error": "Erro durante download", "detail": str(e)}), 500
 
